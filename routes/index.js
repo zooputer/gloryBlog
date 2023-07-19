@@ -11,4 +11,13 @@ router.get('/', async(req, res, next)=> {
   res.render('main');
 });
 
+router.get('/contact', async(req, res, next)=> {
+  res.render('contact');
+});
+
+router.get('/about', async(req, res, next)=> {
+  res.render('about');
+});
+
+
 module.exports = router;
