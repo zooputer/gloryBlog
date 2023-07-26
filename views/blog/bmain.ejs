@@ -26,7 +26,7 @@
                   <span class="date"><%=moment(v.postInfo[i].REG_DATE).format("YYYY-MM-DD")%> &bullet; 
                   <a href="#"><%=v.postInfo[i].CATEGORY_NAME%></a></span>
                   <h2><a href="#"><%=v.postInfo[i].TITLE%></a></h2>
-                  <p><%=v.postInfo[i].CONTENTS%></p>
+                  <p><%=v.postInfo[i].CONTENTS.replace(/(<([^>]+)>)/ig,"")%></p>
                   <p><a href="/blog/view/<%=v.postInfo[i].POST_ID%>" class="btn btn-sm btn-outline-primary">Read More</a></p>
                 </div>
               </div>  

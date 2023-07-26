@@ -8,6 +8,20 @@ var moment = require('moment');
 var sequelize = db.sequelize;
 const { QueryTypes } = require("sequelize");
 
+var multer = require('multer');
+
+//파일 저장위치지정
+var storage = multer.diskStorage({  
+    destination(req,file,cb){
+        cb(null,'public/upload');
+    },
+    filename(req,file,cb){
+        cb(null, `${moment(Date.now()).format('YYYYMMDDHHmmss')}__${file.originalname}`);
+    }
+})
+
+//일반 업로드 처리 객체 생성
+var upload = multer({storage:storage})
 
 
 
@@ -93,24 +107,70 @@ router.post('/cre', async(req, res, next)=> {
 
 
 //포스트 수정 페이지 : http://localhost:3000/blog/mod
-router.get('/mod', async(req, res, next)=> {
+router.get('/mod/:mid', async(req, res, next)=> {
+
+    var postId=req.params.mid;
 
     var v={
-        postInfo:[]
+        postInfo:[],
+        categoryList:[]
     }
 
-    var postInfo = await db.POST.findAll();
+    var categoryList = await db.CATEGORY.findAll();
 
-    v.postInfo=postInfo;
+    var sqlQuery=`SELECT 
+    P.*,
+    C.CATEGORY_NAME
+    FROM 
+    BLOG_CATEGORY C INNER JOIN  BLOG_POST P 
+    ON C.CATEGORY_ID = P.CATEGORY_ID 
+    WHERE POST_ID=${postId}`
 
-    res.render('blog/mod',{v});
+
+    var postInfo = await sequelize.query(sqlQuery,{
+      raw: true,
+      type: QueryTypes.SELECT
+    });
+
+    v.postInfo=postInfo[0];
+    v.categoryList=categoryList;
+
+    res.render('blog/mod',{v,moment});
 });
 
 
-//포스트 삭제
-// router.blog('/', async(req, res, next)=> {
-//     res.redirect('/');
-// });
+
+router.post('/mod/:mid', async(req, res, next)=> {
+    
+    var v={
+        postInfo:[],
+        categoryList:[]
+    }
+
+    var postId=req.params.mid;
+    var category_id = req.body.category_id
+    var title = req.body.title
+    var contents = req.body.contents
+
+    var postInfo ={
+        CATEGORY_ID:category_id,
+        TITLE:title,
+        CONTENTS:contents,
+        REG_DATE:Date.now()
+    }
+
+    var postInfoUpdate = await db.POST.update(postInfo,{where:{POST_ID:postId}});
+
+    var categoryList = await db.CATEGORY.findAll();
+
+
+    v.postInfo=postInfo;
+    v.categoryList=categoryList;
+
+
+    res.redirect('/blog');
+});
+
 
 
 //포스트 단일 게시글 조회 페이지
@@ -123,6 +183,7 @@ router.get('/view/:pid', async(req, res, next)=> {
     }
 
     var postInfo = await db.POST.findOne({where:{POST_ID:postId}});
+    await db.POST.update({VIEW_COUNT:postInfo.VIEW_COUNT+1},{where:{POST_ID:postId}});
 
     v.postInfo=postInfo;
 
@@ -147,6 +208,18 @@ router.get('/:cid', async(req, res, next)=> {
     v.categoryList=categoryList
 
    res.render('blog/bmain',{v,moment});
+});
+
+
+// 포스트 삭제
+router.get('/del/:did', async(req, res, next)=> {
+
+    var delPostId= req.params.did;
+
+    const delPost = await db.POST.destroy({
+        where:{POST_ID:delPostId}
+    })
+    res.redirect('/blog');
 });
 
 
